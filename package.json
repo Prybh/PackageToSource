@@ -1,0 +1,17 @@
+{
+  "name": "com.caerind.packagetosource",
+  "version": "0.0.0",
+  "displayName": "PackageToSource",
+  "description": "PackageToSource",
+  "unity": "2021.2",
+  "documentationUrl": "https://github.com/Caerind/PackageToSource",
+  "changelogUrl": "https://github.com/Caerind/PackageToSource/CHANGELOG.md",
+  "licensesUrl": "https://github.com/Caerind/PackageToSource/LICENSE.md",
+  "dependencies": {},
+  "keywords": [
+    "unitypackage"
+  ],
+  "author": {
+    "name": "Caerind"
+  }
+}

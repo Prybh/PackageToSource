@@ -11,8 +11,9 @@ namespace PackageToSource
         public string url = "";
         public string hash = "";
         public string tag = "";
-        public string version = "";
-        public string branch = "";
+
+        [NonSerialized] public string version = "";
+        [NonSerialized] public string branch = "";
         [NonSerialized] public string resolvedPath = "";
         [NonSerialized] public int filesChanged = 0;
     }

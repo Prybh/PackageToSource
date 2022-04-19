@@ -24,7 +24,7 @@ namespace PackageToSource
             shellName = "/bin/bash";
 #endif
 
-            debugLogger = true;
+            debugLogger = false;
 
             deleteOnUnused = false;
         }

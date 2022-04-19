@@ -52,8 +52,10 @@ namespace PackageToSource
                                 }
                             }
                         }
-                        // TODO : Maybe we can support Tarball/Registry ?
                     }
+
+                    _distantPackages.Sort((x, y) => string.Compare(x.displayName, y.displayName));
+                    _localPackages.Sort((x, y) => string.Compare(x.displayName, y.displayName));
                 }
                 else
                 {

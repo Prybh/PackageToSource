@@ -26,7 +26,7 @@ namespace PackageToSource
 
         public static string GetTagName(string repoPath)
         {
-            return Shell.ExecuteCommand("cd " + repoPath + " | git describe --tags").Trim();
+            return Shell.ExecuteCommand("cd " + repoPath + " | git tag --points-at HEAD").Trim();
         }
 
         public static string GetCommitSha(string repoPath)

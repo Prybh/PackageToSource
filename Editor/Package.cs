@@ -16,5 +16,6 @@ namespace PackageToSource
         [NonSerialized] public string branch = "";
         [NonSerialized] public string resolvedPath = "";
         [NonSerialized] public int filesChanged = 0;
+        [NonSerialized] public bool isPackageToSourceProject = false;
     }
 }

@@ -179,7 +179,7 @@ namespace PackageToSource
                                     removePackageRequest = new RemovePackageRequest(packageInfo);
                                 }
                             }
-                            if (GUILayout.Button(EditorGUIUtility.IconContent("Animation.LastKey", "Embed " + packageInfo.name + " locally")))
+                            if (!packageInfo.isPackageToSourceProject && GUILayout.Button(EditorGUIUtility.IconContent("Animation.LastKey", "Embed " + packageInfo.name + " locally")))
                             {
                                 changedPackage = packageInfo;
                                 gitCloneRequest = new GitCloneRequest(changedPackage);
@@ -204,7 +204,7 @@ namespace PackageToSource
                         {
                             string path = Application.dataPath + "/../Packages/" + packageInfo.displayName;
 
-                            if (GUILayout.Button(EditorGUIUtility.IconContent("Animation.FirstKey", "Back to distant package")))
+                            if (!packageInfo.isPackageToSourceProject && GUILayout.Button(EditorGUIUtility.IconContent("Animation.FirstKey", "Back to distant package")))
                             {
                                 changedPackage = packageInfo;
 
@@ -255,6 +255,12 @@ namespace PackageToSource
                                     }
 
                                     removePackageRequest = new RemovePackageRequest(packageInfo);
+
+                                    if (packageInfo.isPackageToSourceProject)
+                                    {
+                                        Close();
+                                        instance = null;
+                                    }
                                 }
                             }
                             GUILayout.FlexibleSpace();

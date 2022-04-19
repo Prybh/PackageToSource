@@ -88,6 +88,8 @@ namespace PackageToSource
             package.tag = gitTag;
             package.version = packageInfo.version;
 
+            package.isPackageToSourceProject = package.displayName == "PackageToSource";
+
             return package;
         }
 
@@ -108,6 +110,8 @@ namespace PackageToSource
             package.filesChanged = Git.GetFilesChanged(repoPath);
 
             package.resolvedPath = repoPath;
+
+            package.isPackageToSourceProject = package.displayName == "PackageToSource";
 
             return package;
         }

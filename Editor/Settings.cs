@@ -4,12 +4,16 @@ namespace PackageToSource
 {
     public static class Settings
     {
+        public static string gitProjectsPath;
         public static string shellName;
         public static bool debugLogger;
+        public static bool deleteOnUnused;
 
 
         static Settings()
         {
+            gitProjectsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
 #if UNITY_EDITOR_WIN
             shellName = "powershell.exe";
 #endif
@@ -21,6 +25,8 @@ namespace PackageToSource
 #endif
 
             debugLogger = true;
+
+            deleteOnUnused = false;
         }
     }
 }

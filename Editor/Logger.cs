@@ -6,7 +6,7 @@ namespace PackageToSource
 
     public static class Logger
     {
-        public static void Log(string message, Log logLevel = PackageToSource.Log.Info, bool debugOnly = false)
+        public static void Log(string message, Log logLevel = PackageToSource.Log.Info)
         {
             switch (logLevel)
             {
@@ -17,16 +17,10 @@ namespace PackageToSource
                     }
                     break;
                 case PackageToSource.Log.Warning:
-                    if (!Settings.debugLogger || (debugOnly && Settings.debugLogger))
-                    {
-                        UnityEngine.Debug.LogWarning(message);
-                    }
+                    UnityEngine.Debug.LogWarning(message);
                     break;
                 case PackageToSource.Log.Error:
-                    if (!Settings.debugLogger || (debugOnly && Settings.debugLogger))
-                    {
-                        UnityEngine.Debug.LogError(message);
-                    }
+                    UnityEngine.Debug.LogError(message);
                     break;
             }
         }

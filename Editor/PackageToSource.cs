@@ -1,8 +1,8 @@
+using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditor.PackageManager;
-using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 
 namespace PackageToSource
@@ -13,98 +13,24 @@ namespace PackageToSource
 
         private PackageListRequest packageListRequest = null;
         private RemovePackageRequest removePackageRequest = null;
-        //private EmbedPackageRequest embedPackageRequest = null;
         private AddPackageRequest addPackageRequest = null;
-
-        private class GitCloneRequest
-        {
-            private Package _package = null;
-            private bool _error = false;
-            public bool hasError
-            {
-                get { return _error; }
-            }
-
-            public GitCloneRequest(Package package)
-            {
-                _package = package;
-                _error = false;
-
-                string path = Application.dataPath + "/../Packages/" + _package.displayName;
-
-                if (FileIO.DirectoryExists(path) && FileIO.IsEmptyDirectory(path))
-                {
-                    FileIO.DeleteDirectory(path);
-                }
-
-                string gitCloneOutput = Git.Clone(Application.dataPath + "/../Packages/", _package.url);
-                Logger.Log(gitCloneOutput, Log.Warning);
-                if (gitCloneOutput.Contains("fatal"))
-                {
-                    _error = true;
-                }
-
-                string gitCheckoutOutput = Git.Checkout(path, _package.hash);
-                Logger.Log(gitCloneOutput, Log.Warning);
-                if (gitCheckoutOutput.Contains("fatal"))
-                {
-                    _error = true;
-                }
-
-                if (_error) // Retry
-                {
-                    Logger.Log("Retry Clone");
-
-                    gitCloneOutput = Git.Clone(Application.dataPath + "/../Packages/", _package.url);
-                    Logger.Log(gitCloneOutput, Log.Warning);
-                    if (gitCloneOutput.Contains("fatal"))
-                    {
-                        _error = true;
-                    }
-
-                    _error = false;
-
-                    gitCheckoutOutput = Git.Checkout(path, _package.hash);
-                    Logger.Log(gitCloneOutput, Log.Warning);
-                    if (gitCheckoutOutput.Contains("fatal"))
-                    {
-                        _error = true;
-                    }
-                }
-
-                Logger.Log("CloneStarted");
-            }
-
-            public bool Update()
-            {
-                string path = Application.dataPath + "/../Packages/" + _package.displayName;
-                if (FileIO.DirectoryExists(path) && FileIO.DirectoryExists(path + "/.git") && FileIO.DirectoryExists(path + "/package.json"))
-                {
-                    _error = false;
-                    Logger.Log("Cloned");
-                    AssetDatabase.ImportAsset("Packages/" + _package.displayName);
-                    Logger.Log("Imported");
-                    return true;
-                }
-                if (_error)
-                {
-                    return true;
-                }
-                return false;
-            }
-        }
         private GitCloneRequest gitCloneRequest = null;
 
-        private enum PackageToSourceStep { Nothing, RemoveStarted, RefreshDone, EmbedStarted };
+        private enum PackageToSourceStep { Nothing, RemoveStarted, RefreshDone, AddStarted };
         private enum SourceToPackageStep { Nothing, RemoveStarted, RefreshDone, AddStarted };
 
-        [System.Serializable]
+        [Serializable]
         private class TransientInfo
         {
+            // Transition
             public PackageToSourceStep packageToSourceStep;
             public SourceToPackageStep sourceToPackageStep;
             public Package package;
-            // TODO : Cache info about current local(/distant?) packages ?
+
+            // Settings
+            public string gitProjectsPath;
+            public string shellName;
+            public bool debug;
         }
 
         private Package changedPackage = null;
@@ -116,7 +42,7 @@ namespace PackageToSource
 
         private Vector2 gitScrollPos;
         private Vector2 localScrollPos;
-
+        private Rect settingsButtonRect;
 
         private void OnEnable()
         {
@@ -131,6 +57,9 @@ namespace PackageToSource
                 packageToSourceStep = info.packageToSourceStep;
                 sourceToPackageStep = info.sourceToPackageStep;
                 changedPackage = info.package;
+                Settings.gitProjectsPath = info.gitProjectsPath;
+                Settings.shellName = info.shellName;
+                Settings.debugLogger = info.debug;
 
                 if (packageToSourceStep == PackageToSourceStep.RemoveStarted)
                 {
@@ -153,6 +82,9 @@ namespace PackageToSource
             info.packageToSourceStep = packageToSourceStep;
             info.sourceToPackageStep = sourceToPackageStep;
             info.package = changedPackage;
+            info.gitProjectsPath = Settings.gitProjectsPath;
+            info.shellName = Settings.shellName;
+            info.debug = Settings.debugLogger;
 
             string json = JsonUtility.ToJson(info, false);
             Logger.Log(json);
@@ -189,19 +121,24 @@ namespace PackageToSource
         {
             using (var toolbarScope = new GUILayout.HorizontalScope(GUILayout.MinWidth(800)))
             {
-                if (GUILayout.Button("Refresh", GUILayout.Width(60f)))
+                if (GUILayout.Button(EditorGUIUtility.IconContent("Refresh", "Refresh")))
                 {
-                    localPackages.Clear();
                     RefreshPackageList();
                 }
-                if (GUILayout.Button("Clone repo test"))
+                if (GUILayout.Button(EditorGUIUtility.IconContent("_Popup", "Settings")))
                 {
-                    Client.Add("https://github.com/Prybh/TestUnityPackage.git");
+                    PopupWindow.Show(settingsButtonRect, new SettingsWindow());
                 }
+                if (Event.current.type == EventType.Repaint)
+                    settingsButtonRect = GUILayoutUtility.GetLastRect();
 
                 if (packageListRequest != null)
                 {
                     GUILayout.Label("Refreshing...");
+                }
+                else if (removePackageRequest != null || addPackageRequest != null)
+                {
+                    GUILayout.Label("Switching package...");
                 }
 
                 GUILayout.FlexibleSpace();
@@ -216,52 +153,36 @@ namespace PackageToSource
                     gitScrollPos = GUILayout.BeginScrollView(gitScrollPos);
                     GUI.skin.label.padding.left = 5;
 
-                    /*if (changePackageRequest != null && changePackageRequest.waitingRefresh)
+                    for (int i = distantPackages.Count - 1; i >= 0; --i)
                     {
-                        GUILayout.Label("Waiting for Refresh...");
-                    }
-                    else if (changePackageRequest != null)
-                    {
-                        GUILayout.Label("Processing...");
-                    }
-                    else if (refreshPackagesRequest != null)
-                    {
-                        GUILayout.Label("Refreshing...");
-                    }
-                    else*/
-                    {
-                        for (int i = distantPackages.Count - 1; i >= 0; --i)
+                        var packageInfo = distantPackages[i];
+                        using (var packageScope = new GUILayout.HorizontalScope())
                         {
-                            var packageInfo = distantPackages[i];
-                            using (var packageScope = new GUILayout.HorizontalScope())
+                            string labelText = packageInfo.displayName;
+                            if (packageInfo.version.Length > 0)
                             {
-                                string labelText = packageInfo.displayName;
-                                if (packageInfo.version.Length > 0)
-                                {
-                                    labelText += " (" + packageInfo.version + ")";
-                                }
+                                labelText += " (" + packageInfo.version + ")";
+                            }
 
-                                string labelTag = "";
-                                if (packageInfo.tag.Length > 0)
-                                {
-                                    labelTag = "\n" + packageInfo.tag;
-                                }
+                            string labelTag = "";
+                            if (packageInfo.tag.Length > 0)
+                            {
+                                labelTag = "\n" + packageInfo.tag;
+                            }
 
-                                GUILayout.Label(new GUIContent(labelText, packageInfo.name + "\n" + packageInfo.url + labelTag));
-                                GUILayout.FlexibleSpace();
-                                if (GUILayout.Button(new GUIContent("X", "Remove package")))
+                            GUILayout.Label(new GUIContent(labelText, packageInfo.name + "\n" + packageInfo.url + labelTag));
+                            GUILayout.FlexibleSpace();
+                            if (GUILayout.Button(new GUIContent("X", "Remove package")))
+                            {
+                                if (EditorUtility.DisplayDialog("Remove package?", "Are you sure you want to remove " + packageInfo.name + " from the project?", "Remove", "Keep"))
                                 {
                                     removePackageRequest = new RemovePackageRequest(packageInfo);
                                 }
-                                if (GUILayout.Button(EditorGUIUtility.IconContent("Animation.LastKey", "Embed " + packageInfo.name + " locally")))
-                                {
-                                    changedPackage = packageInfo;
-                                    localPackages.Add(packageInfo);
-
-                                    AssetDatabase.DisallowAutoRefresh();
-
-                                    gitCloneRequest = new GitCloneRequest(changedPackage);
-                                }
+                            }
+                            if (GUILayout.Button(EditorGUIUtility.IconContent("Animation.LastKey", "Embed " + packageInfo.name + " locally")))
+                            {
+                                changedPackage = packageInfo;
+                                gitCloneRequest = new GitCloneRequest(changedPackage);
                             }
                         }
                     }
@@ -276,54 +197,67 @@ namespace PackageToSource
                     localScrollPos = GUILayout.BeginScrollView(localScrollPos);
                     GUI.skin.label.padding.left = 5;
 
-                    /*if (changePackageRequest != null && changePackageRequest.waitingRefresh)
+                    for (int i = localPackages.Count - 1; i >= 0; --i)
                     {
-                        GUILayout.Label("Waiting for Refresh...");
-                    }
-                    else if (changePackageRequest != null)
-                    {
-                        GUILayout.Label("Processing...");
-                    }
-                    else*/
-                    {
-                        for (int i = localPackages.Count - 1; i >= 0; --i)
+                        var packageInfo = localPackages[i];
+                        using (var packageScope = new GUILayout.HorizontalScope())
                         {
-                            var packageInfo = localPackages[i];
-                            using (var packageScope = new GUILayout.HorizontalScope())
+                            string path = Application.dataPath + "/../Packages/" + packageInfo.displayName;
+
+                            if (GUILayout.Button(EditorGUIUtility.IconContent("Animation.FirstKey", "Back to distant package")))
                             {
-                                string path = Application.dataPath + "/../Packages/" + changedPackage.displayName;
+                                changedPackage = packageInfo;
 
-                                if (GUILayout.Button(EditorGUIUtility.IconContent("Animation.FirstKey", "Back to distant package")))
+                                if (Settings.deleteOnUnused)
                                 {
-                                    changedPackage = packageInfo;
-                                    localPackages.RemoveAt(i);
-
-                                    AssetDatabase.DisallowAutoRefresh();
-
                                     Logger.Log("DeleteStarted");
                                     FileIO.DeleteDirectory(path);
                                     Logger.Log("Deleted");
+                                }
+
+                                removePackageRequest = new RemovePackageRequest(packageInfo);
+                                packageToSourceStep = PackageToSourceStep.Nothing;
+                                sourceToPackageStep = SourceToPackageStep.RemoveStarted;
+                                Logger.Log("SourceToPackageStep.RemoveStarted");
+                            }
+
+                            string extraInfo = packageInfo.tag;
+                            if (extraInfo.Length == 0)
+                            {
+                                extraInfo = packageInfo.branch;
+                            }
+                            if (extraInfo.Length > 0)
+                            {
+                                extraInfo = " (" + extraInfo + ")";
+                            }
+
+                            string modif = "";
+                            if (packageInfo.filesChanged > 0)
+                            {
+                                modif = " [" + packageInfo.filesChanged + " modif.]";
+                            }
+
+                            GUILayout.Label(new GUIContent(packageInfo.displayName + extraInfo + modif));
+
+                            if (GUILayout.Button(EditorGUIUtility.IconContent("Project", "Show In Explorer")))
+                            {
+                                EditorUtility.RevealInFinder(packageInfo.resolvedPath + "/package.json");
+                            }
+                            if (GUILayout.Button(new GUIContent("X", "Remove package")))
+                            {
+                                if (EditorUtility.DisplayDialog("Remove package?",  "Are you sure you want to remove " + packageInfo.name  + " from the project?", "Remove", "Keep"))
+                                {
+                                    if (Settings.deleteOnUnused)
+                                    {
+                                        Logger.Log("DeleteStarted");
+                                        FileIO.DeleteDirectory(path);
+                                        Logger.Log("Deleted");
+                                    }
 
                                     removePackageRequest = new RemovePackageRequest(packageInfo);
-                                    packageToSourceStep = PackageToSourceStep.Nothing;
-                                    sourceToPackageStep = SourceToPackageStep.RemoveStarted;
-                                    Logger.Log("SourceToPackageStep.RemoveStarted");
                                 }
-
-                                //string tagName = Git.GetTagName(path);
-                                //string branchName = Git.GetBranchName(path);
-
-                                GUILayout.Label(new GUIContent(packageInfo.displayName + " ()"));
-                                if (GUILayout.Button(EditorGUIUtility.IconContent("d_Project", "Show In Explorer")))
-                                {
-                                    EditorUtility.RevealInFinder(Application.dataPath + "/../Packages/" + packageInfo.displayName + "/package.json");
-                                }
-                                if (GUILayout.Button(new GUIContent("X", "Remove package")))
-                                {
-                                    FileIO.DeleteDirectory(path);
-                                }
-                                GUILayout.FlexibleSpace();
                             }
+                            GUILayout.FlexibleSpace();
                         }
                     }
 
@@ -336,7 +270,10 @@ namespace PackageToSource
         {
             if (instance != null)
             {
-                instance.packageListRequest = new PackageListRequest();
+                if (instance.packageListRequest == null)
+                {
+                    instance.packageListRequest = new PackageListRequest();
+                }
             }
         }
 
@@ -368,67 +305,32 @@ namespace PackageToSource
 
             if (gitCloneRequest != null && gitCloneRequest.Update())
             {
-                if (gitCloneRequest.hasError)
-                {
-                    Logger.Log("Can't clone. Cancelling package to source", Log.Error);
-                    changedPackage = null;
-                    packageToSourceStep = PackageToSourceStep.Nothing;
-                    sourceToPackageStep = SourceToPackageStep.Nothing;
-                }
-                else
-                {
-                    removePackageRequest = new RemovePackageRequest(changedPackage);
-                    packageToSourceStep = PackageToSourceStep.RemoveStarted;
-                    sourceToPackageStep = SourceToPackageStep.Nothing;
-                    Logger.Log("PackageToSourceStep.RemoveStarted");
-                }
-
+                removePackageRequest = new RemovePackageRequest(changedPackage);
+                packageToSourceStep = PackageToSourceStep.RemoveStarted;
+                sourceToPackageStep = SourceToPackageStep.Nothing;
+                Logger.Log("PackageToSourceStep.RemoveStarted");
                 gitCloneRequest = null;
             }
             else if (removePackageRequest != null && removePackageRequest.Update())
             {
-                if (changedPackage != null)
-                {
-                    Logger.Log("AllowRefresh");
-                    AssetDatabase.AllowAutoRefresh();
-                    Logger.Log("ForceRefresh");
-                    AssetDatabase.Refresh();
-                }
-                else
-                {
-                    Logger.Log("changedPackage should not be null here", Log.Error);
-                }
                 removePackageRequest = null;
             }
-            else if (packageToSourceStep == PackageToSourceStep.RefreshDone && changedPackage != null)
+            if (packageToSourceStep == PackageToSourceStep.RefreshDone && changedPackage != null)
             {
-                Logger.Log("PackageToSourceStep.Nothing");
-                packageToSourceStep = PackageToSourceStep.Nothing;
-                /*
-                Logger.Log("PackageToSourceStep.EmbedStarted");
-                packageToSourceStep = PackageToSourceStep.EmbedStarted;
-                embedPackageRequest = new EmbedPackageRequest(changedPackage);
-                */
+                Logger.Log("Add Package");
+                packageToSourceStep = PackageToSourceStep.AddStarted;
+                addPackageRequest = AddPackageRequest.AddLocalPackage(changedPackage);
             }
-            /*
-            else if (embedPackageRequest != null && embedPackageRequest.Update())
-            {
-                changedPackage = null;
-                Logger.Log("PackageToSourceStep.Nothing");
-                packageToSourceStep = PackageToSourceStep.Nothing;
-                embedPackageRequest = null;
-            }
-            */
             else if (sourceToPackageStep == SourceToPackageStep.RefreshDone && changedPackage != null)
             {
-                Logger.Log("SourceToPackageStep.AddStarted");
+                Logger.Log("Add Package");
                 sourceToPackageStep = SourceToPackageStep.AddStarted;
-                addPackageRequest = new AddPackageRequest(changedPackage);
+                addPackageRequest = AddPackageRequest.AddDistantPackage(changedPackage);
             }
             else if (addPackageRequest != null && addPackageRequest.Update())
             {
                 changedPackage = null;
-                Logger.Log("SourceToPackageStep.Nothing");
+                Logger.Log("Package Added");
                 sourceToPackageStep = SourceToPackageStep.Nothing;
                 addPackageRequest = null;
             }

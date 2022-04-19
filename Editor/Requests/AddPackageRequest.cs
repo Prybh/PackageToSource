@@ -7,9 +7,28 @@ namespace PackageToSource
     {
         private AddRequest _addRequest = null;
 
-        public AddPackageRequest(Package package)
+        public static AddPackageRequest AddLocalPackage(Package package)
         {
-            _addRequest = Client.Add(package.url);
+            AddPackageRequest request = new AddPackageRequest();
+            request._addRequest = Client.Add("file:" + FileIO.Combine(Settings.gitProjectsPath, package.displayName));
+            return request;
+        }
+
+        public static AddPackageRequest AddDistantPackage(Package package)
+        {
+            AddPackageRequest request = new AddPackageRequest();
+
+            string packageTag = Git.GetTagName(package.resolvedPath); // Recompute tag as if might have changed
+            if (packageTag.Length > 0)
+            {
+                request._addRequest = Client.Add(package.url + "#" + packageTag);
+            }
+            else
+            {
+                request._addRequest = Client.Add(package.url);
+            }
+
+            return request;
         }
 
         public override bool Update()

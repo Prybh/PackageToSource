@@ -39,9 +39,18 @@ namespace PackageToSource
                         {
                             _distantPackages.Add(ConvertUnityGitPackageToPackage(packageInfo));
                         }
-                        else if (packageInfo.source != PackageSource.BuiltIn)
+                        else if (packageInfo.source == PackageSource.Local)
                         {
-                            UnityEngine.Debug.Log(packageInfo.displayName + " " + packageInfo.source.ToString());
+                            string path = packageInfo.resolvedPath;
+                            bool hasGit = FileIO.DirectoryExists(FileIO.Combine(path, ".git"));
+                            if (hasGit)
+                            {
+                                string url = Git.GetRemoteUrl(path);
+                                if (url.Length > 0)
+                                {
+                                    _localPackages.Add(ConvertUnityLocalPackageToPackage(packageInfo, url));
+                                }
+                            }
                         }
                         // TODO : Maybe we can support Tarball/Registry ?
                     }
@@ -78,6 +87,27 @@ namespace PackageToSource
             package.hash = packageInfo.git.hash;
             package.tag = gitTag;
             package.version = packageInfo.version;
+
+            return package;
+        }
+
+        private static Package ConvertUnityLocalPackageToPackage(PackageInfo packageInfo, string url)
+        {
+            Package package = new Package();
+            package.packageId = packageInfo.packageId;
+            package.name = packageInfo.name;
+            package.displayName = packageInfo.displayName;
+
+            string repoPath = packageInfo.resolvedPath;
+
+            package.url = url;
+            package.hash = Git.GetCommitSha(repoPath);
+            package.tag = Git.GetTagName(repoPath);
+            package.version = "";
+            package.branch = Git.GetBranchName(repoPath);
+            package.filesChanged = Git.GetFilesChanged(repoPath);
+
+            package.resolvedPath = repoPath;
 
             return package;
         }

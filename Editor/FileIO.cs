@@ -6,6 +6,18 @@ namespace PackageToSource
 {
     public static class FileIO
     {
+        public static string Combine(string a, string b)
+        {
+            string p = Path.Combine(a, b);
+            p.Replace('\\', '/');
+            return p;
+        }
+
+        public static bool FileExists(string path)
+        {
+            return File.Exists(path);
+        }
+
         public static bool DirectoryExists(string path)
         {
             return Directory.Exists(path);

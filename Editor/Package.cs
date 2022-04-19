@@ -2,7 +2,7 @@ using System;
 
 namespace PackageToSource
 {
-    [System.Serializable]
+    [Serializable]
     public class Package
     {
         public string packageId = "";
@@ -12,5 +12,8 @@ namespace PackageToSource
         public string hash = "";
         public string tag = "";
         public string version = "";
+        public string branch = "";
+        [NonSerialized] public string resolvedPath = "";
+        [NonSerialized] public int filesChanged = 0;
     }
 }

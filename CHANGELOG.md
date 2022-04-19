@@ -1,3 +1,11 @@
+## [1.0.1](https://github.com/Caerind/PackageToSource/compare/v1.0.0...v1.0.1) (2022-04-19)
+
+
+### Bug Fixes
+
+* Add custom checks for PackageToSource package ([39738ce](https://github.com/Caerind/PackageToSource/commit/39738ceb5afc8425111e56ff86d1c0a358166426))
+* Fix git get tag name command ([621d3a6](https://github.com/Caerind/PackageToSource/commit/621d3a69b3ed055ab9a6888be5aa2ac9365e96d7))
+
 # 1.0.0 (2022-04-19)
 
 

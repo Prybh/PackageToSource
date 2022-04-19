@@ -192,7 +192,7 @@ namespace PackageToSource
 
                 using (var secondColumn = new GUILayout.VerticalScope("Box", GUILayout.MinWidth(394)))
                 {
-                    GUILayout.Label("Embedded Packages", EditorStyles.boldLabel);
+                    GUILayout.Label("Local Packages", EditorStyles.boldLabel);
 
                     localScrollPos = GUILayout.BeginScrollView(localScrollPos);
                     GUI.skin.label.padding.left = 5;

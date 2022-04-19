@@ -1,12 +1,12 @@
 {
-  "name": "com.caerind.packagetosource",
+  "name": "com.prybh.packagetosource",
   "version": "1.0.2",
   "displayName": "PackageToSource",
   "description": "PackageToSource",
   "unity": "2021.2",
-  "documentationUrl": "https://github.com/Caerind/PackageToSource",
-  "changelogUrl": "https://github.com/Caerind/PackageToSource/CHANGELOG.md",
-  "licensesUrl": "https://github.com/Caerind/PackageToSource/LICENSE.md",
+  "documentationUrl": "https://github.com/Prybh/PackageToSource",
+  "changelogUrl": "https://github.com/Prybh/PackageToSource/CHANGELOG.md",
+  "licensesUrl": "https://github.com/Prybh/PackageToSource/LICENSE.md",
   "dependencies": {},
   "keywords": [
     "unitypackage"

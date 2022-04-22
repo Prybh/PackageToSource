@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/Prybh/PackageToSource/compare/v1.0.3...v1.0.4) (2022-04-22)
+
+
+### Bug Fixes
+
+* Update author name ([490b064](https://github.com/Prybh/PackageToSource/commit/490b064a164f1f365dc7c993846e3b5783341b5b))
+
 ## [1.0.3](https://github.com/Prybh/PackageToSource/compare/v1.0.2...v1.0.3) (2022-04-19)
 
 

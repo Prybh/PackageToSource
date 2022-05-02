@@ -1,3 +1,10 @@
+## [1.0.5](https://github.com/Prybh/PackageToSource/compare/v1.0.4...v1.0.5) (2022-05-02)
+
+
+### Bug Fixes
+
+* Invalid settings default values ([cf9a2c6](https://github.com/Prybh/PackageToSource/commit/cf9a2c6819a550b241120e9bc150c2bdfe6d7570))
+
 ## [1.0.4](https://github.com/Prybh/PackageToSource/compare/v1.0.3...v1.0.4) (2022-04-22)
 
 

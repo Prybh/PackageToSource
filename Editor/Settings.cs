@@ -14,19 +14,24 @@ namespace PackageToSource
         {
             gitProjectsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
-#if UNITY_EDITOR_WIN
-            shellName = "powershell.exe";
-#endif
-#if UNITY_EDITOR_OSX
-            shellName = "/bin/bash";
-#endif
-#if UNITY_EDITOR_LINUX
-            shellName = "/bin/bash";
-#endif
+            shellName = GetDefaultShellName();
 
             debugLogger = false;
 
             deleteOnUnused = false;
+        }
+
+        public static string GetDefaultShellName()
+        {
+#if UNITY_EDITOR_WIN
+            return "powershell.exe";
+#elif UNITY_EDITOR_OSX
+            return "/bin/bash";
+#elif UNITY_EDITOR_LINUX
+            return "/bin/bash";
+#else
+            return "";
+#endif
         }
     }
 }

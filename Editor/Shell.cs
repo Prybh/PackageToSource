@@ -22,6 +22,9 @@ namespace PackageToSource
 
         public static string ExecuteProcess(ProcessStartInfo processInfo)
         {
+            if (processInfo.FileName == null || processInfo.FileName.Length == 0)
+                return "";
+
             string output = "";
 
             Process process = Process.Start(processInfo);

@@ -31,6 +31,7 @@ namespace PackageToSource
             public string gitProjectsPath;
             public string shellName;
             public bool debug;
+            public bool deleteOnUnused;
         }
 
         private Package changedPackage = null;
@@ -48,18 +49,20 @@ namespace PackageToSource
         {
             Logger.Log("OnEnable");
 
-            if (EditorPrefs.HasKey("PackageToSource"))
+            if (EditorPrefs.HasKey("PrybhPackageToSource"))
             {
-                string json = EditorPrefs.GetString("PackageToSource");
+                string json = EditorPrefs.GetString("PrybhPackageToSource");
                 Logger.Log(json);
 
                 TransientInfo info = JsonUtility.FromJson<TransientInfo>(json);
                 packageToSourceStep = info.packageToSourceStep;
                 sourceToPackageStep = info.sourceToPackageStep;
                 changedPackage = info.package;
+
                 Settings.gitProjectsPath = info.gitProjectsPath;
                 Settings.shellName = info.shellName;
                 Settings.debugLogger = info.debug;
+                Settings.deleteOnUnused = info.deleteOnUnused;
 
                 if (packageToSourceStep == PackageToSourceStep.RemoveStarted)
                 {
@@ -70,7 +73,12 @@ namespace PackageToSource
                 {
                     Logger.Log("SourceToPackageStep.RefreshDone");
                     sourceToPackageStep = SourceToPackageStep.RefreshDone;
+            }
                 }
+
+            if (Settings.shellName == null || Settings.shellName.Length == 0)
+            {
+                Settings.shellName = Settings.GetDefaultShellName();
             }
         }
 
@@ -82,13 +90,15 @@ namespace PackageToSource
             info.packageToSourceStep = packageToSourceStep;
             info.sourceToPackageStep = sourceToPackageStep;
             info.package = changedPackage;
+
             info.gitProjectsPath = Settings.gitProjectsPath;
             info.shellName = Settings.shellName;
             info.debug = Settings.debugLogger;
+            info.deleteOnUnused = Settings.deleteOnUnused;
 
             string json = JsonUtility.ToJson(info, false);
             Logger.Log(json);
-            EditorPrefs.SetString("PackageToSource", json);
+            EditorPrefs.SetString("PrybhPackageToSource", json);
         }
 
         protected PackageToSourceWindow()

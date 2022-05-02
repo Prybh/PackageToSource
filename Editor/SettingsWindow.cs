@@ -16,11 +16,11 @@ namespace PackageToSource
             GUILayout.Label("Settings", EditorStyles.boldLabel);
             GUILayout.Space(10);
 
-            float previousLabelWidth = EditorGUIUtility.labelWidth;
-            EditorGUIUtility.labelWidth = 50.0f;
 
             using (var toolbarScope = new GUILayout.HorizontalScope())
             {
+                float previousLabelWidth = EditorGUIUtility.labelWidth;
+                EditorGUIUtility.labelWidth = 50.0f;
                 Settings.gitProjectsPath = EditorGUILayout.TextField(new GUIContent("Projects", "Path to host git projects"), Settings.gitProjectsPath);
                 if (GUILayout.Button(EditorGUIUtility.IconContent("d_Project", "Show in explorer")))
                 {
@@ -30,15 +30,14 @@ namespace PackageToSource
                         Settings.gitProjectsPath = newPath;
                     }
                 }
+                EditorGUIUtility.labelWidth = previousLabelWidth;
             }
             GUILayout.Space(5);
             Settings.shellName = EditorGUILayout.TextField(new GUIContent("Shell", "Shell process to launch commands"), Settings.shellName);
             GUILayout.Space(5);
-            Settings.deleteOnUnused = EditorGUILayout.Toggle(new GUIContent("Delete", "Delete unused repository"), Settings.deleteOnUnused);
+            Settings.deleteOnUnused = EditorGUILayout.Toggle(new GUIContent("Delete Unused Repository", "Delete unused repository"), Settings.deleteOnUnused);
             GUILayout.Space(5);
             Settings.debugLogger = EditorGUILayout.Toggle(new GUIContent("Debug", "Enable debug logs"), Settings.debugLogger);
-
-            EditorGUIUtility.labelWidth = previousLabelWidth;
         }
     }
 }

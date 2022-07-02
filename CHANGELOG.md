@@ -1,3 +1,10 @@
+## [1.0.7](https://github.com/Prybh/PackageToSource/compare/v1.0.6...v1.0.7) (2022-07-02)
+
+
+### Bug Fixes
+
+* Fix editor build ([aa3afc5](https://github.com/Prybh/PackageToSource/commit/aa3afc5f7b2405a2c1bf6704af9c8f915d162155))
+
 ## [1.0.6](https://github.com/Prybh/PackageToSource/compare/v1.0.5...v1.0.6) (2022-07-01)
 
 

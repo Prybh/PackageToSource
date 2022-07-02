@@ -1,3 +1,10 @@
+## [1.0.6](https://github.com/Prybh/PackageToSource/compare/v1.0.5...v1.0.6) (2022-07-01)
+
+
+### Bug Fixes
+
+* Add Editor to asmdef ([0d23baf](https://github.com/Prybh/PackageToSource/commit/0d23bafe9c758f26aeeb4d6b1f41d03fddcf7840))
+
 ## [1.0.5](https://github.com/Prybh/PackageToSource/compare/v1.0.4...v1.0.5) (2022-05-02)
 
 
